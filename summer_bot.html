@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Летний список дел</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sun: #FFB830;
+    --sky: #3AABF0;
+    --sea: #1A8FCE;
+    --grass: #5DBE6E;
+    --sand: #FFF3D4;
+    --done: #5DBE6E;
+    --card-bg: #FFFFFF;
+    --text: #1A2E40;
+    --text-muted: #7A93A6;
+    --border: #E4EEF5;
+    --bg: #F0F8FF;
+  }
+
+  body {
+    font-family: -apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #3AABF0 0%, #1A8FCE 60%, #1565C0 100%);
+    padding: 1.5rem 1.25rem 3.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40px;
+    background: var(--bg);
+    border-radius: 24px 24px 0 0;
+  }
+
+  .sun {
+    position: absolute;
+    top: -10px; right: 24px;
+    width: 72px; height: 72px;
+    background: var(--sun);
+    border-radius: 50%;
+    box-shadow: 0 0 40px #FFB83080;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 40px #FFB83080; }
+    50% { box-shadow: 0 0 60px #FFB830cc; }
+  }
+
+  .header-content { position: relative; z-index: 1; }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .progress-wrap {
+    margin-top: 14px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 100px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: #fff;
+    border-radius: 100px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .content { padding: 0 1rem; }
+
+  .add-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(58,171,240,0.08);
+  }
+
+  .add-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .add-input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .add-input:focus { border-color: var(--sky); }
+  .add-input::placeholder { color: var(--text-muted); }
+
+  .add-btn {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--sky);
+    border: none;
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .add-btn:active { transform: scale(0.93); background: var(--sea); }
+
+  .emoji-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .emoji-chip {
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: var(--sand);
+    border: 1.5px solid transparent;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .emoji-chip.selected {
+    border-color: var(--sun);
+    background: #FFF3D4;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 1.25rem 0 0.6rem;
+    padding: 0 2px;
+  }
+
+  .task-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .task-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    transition: all 0.25s ease;
+    animation: slideIn 0.3s ease;
+    cursor: pointer;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-card.done {
+    background: #F4FBF5;
+    border-color: #C2EDCC;
+  }
+
+  .task-card.done .task-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .check-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    font-size: 14px;
+  }
+
+  .task-card.done .check-btn {
+    background: var(--done);
+    border-color: var(--done);
+    color: #fff;
+  }
+
+  .task-emoji { font-size: 20px; flex-shrink: 0; }
+
+  .task-text {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.3;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .delete-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #CBD5E0;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .delete-btn:hover { color: #E53E3E; background: #FFF5F5; }
+
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state .big-emoji { font-size: 48px; display: block; margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; }
+
+  .filter-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-tab {
+    flex: 1;
+    padding: 7px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-tab.active {
+    background: var(--sky);
+    border-color: var(--sky);
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="sun"></div>
+  <div class="header-content">
+    <h1>☀️ Моё лето</h1>
+    <p>Список желаний и планов на лето</p>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="progress-label">
+      <span id="progressText">0 из 0 выполнено</span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="add-section">
+    <div class="add-row">
+      <input class="add-input" id="taskInput" placeholder="Что хочу сделать этим летом..." maxlength="80" />
+      <button class="add-btn" onclick="addTask()">+</button>
+    </div>
+    <div class="emoji-row" id="emojiRow">
+      <span class="emoji-chip" onclick="selectEmoji(this, '🏖️')">🏖️</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '🏊')">🏊</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '🍦')">🍦</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '🌴')">🌴</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '🎉')">🎉</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '🚴')">🚴</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '📚')">📚</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '🎸')">🎸</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '✈️')">✈️</span>
+      <span class="emoji-chip" onclick="selectEmoji(this, '🌅')">🌅</span>
+    </div>
+  </div>
+
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="setFilter('all', this)">Все</button>
+    <button class="filter-tab" onclick="setFilter('todo', this)">Ещё впереди</button>
+    <button class="filter-tab" onclick="setFilter('done', this)">Готово ✓</button>
+  </div>
+
+  <div id="taskList" class="task-list"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'summer_tasks_v1';
+let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let selectedEmoji = '🌟';
+let filter = 'all';
+
+if (window.Telegram?.WebApp) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function selectEmoji(el, emoji) {
+  document.querySelectorAll('.emoji-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedEmoji = emoji;
+}
+
+function addTask() {
+  const input = document.getElementById('taskInput');
+  const text = input.value.trim();
+  if (!text) return;
+  tasks.unshift({ id: Date.now(), text, emoji: selectedEmoji, done: false });
+  input.value = '';
+  save();
+  render();
+  if (window.Telegram?.WebApp) Telegram.WebApp.HapticFeedback?.impactOccurred('light');
+}
+
+function toggleTask(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; save(); render(); }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  save();
+  render();
+}
+
+function setFilter(f, el) {
+  filter = f;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function render() {
+  const total = tasks.length;
+  const done = tasks.filter(t => t.done).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done} из ${total} выполнено`;
+  document.getElementById('progressPct').textContent = pct + '%';
+
+  let filtered = tasks;
+  if (filter === 'todo') filtered = tasks.filter(t => !t.done);
+  if (filter === 'done') filtered = tasks.filter(t => t.done);
+
+  const list = document.getElementById('taskList');
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><span class="big-emoji">${filter === 'done' ? '🌻' : '🌊'}</span><p>${filter === 'done' ? 'Пока ничего не выполнено' : 'Добавь своё первое летнее желание!'}</p></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => `
+    <div class="task-card ${t.done ? 'done' : ''}" id="task-${t.id}">
+      <button class="check-btn" onclick="toggleTask(${t.id})" aria-label="Отметить">${t.done ? '✓' : ''}</button>
+      <span class="task-emoji">${t.emoji}</span>
+      <span class="task-text">${escHtml(t.text)}</span>
+      <button class="delete-btn" onclick="deleteTask(${t.id})" aria-label="Удалить">✕</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('taskInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
+
+// Добавляем стартовые примеры если список пуст
+if (tasks.length === 0) {
+  tasks = [
+    { id: 1, text: 'Сходить на пляж', emoji: '🏖️', done: false },
+    { id: 2, text: 'Съесть мороженое у моря', emoji: '🍦', done: false },
+    { id: 3, text: 'Посмотреть закат', emoji: '🌅', done: true },
+  ];
+  save();
+}
+
+render();
+</script>
+</body>
+</html>
