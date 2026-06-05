@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Летний список</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --sun:#FFD93D;
+  --orange:#FF6B35;
+  --coral:#FF8C69;
+  --sky:#00B4D8;
+  --deep:#0077B6;
+  --mint:#06D6A0;
+  --bg:#0A1628;
+  --card:#111F35;
+  --card2:#162440;
+  --border:#1E3050;
+  --text:#F0F8FF;
+  --muted:#6B8CAE;
+  --done:#06D6A0;
+}
+
+body{
+  font-family:'Nunito',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── STARS BG ── */
+.stars{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--d) ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:.1}100%{opacity:.7}}
+
+/* ── SCREENS ── */
+.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:0 0 80px}
+.screen.active{display:flex;flex-direction:column}
+
+/* ── LOGIN ── */
+#loginScreen{align-items:center;justify-content:center;padding:2rem}
+.login-box{width:100%;max-width:340px;text-align:center}
+.login-planet{
+  width:100px;height:100px;margin:0 auto 1.5rem;
+  background:radial-gradient(circle at 35% 35%, #FFD93D, #FF6B35 60%, #c94020);
+  border-radius:50%;position:relative;
+  box-shadow:0 0 60px #FF6B3550, 0 0 120px #FFD93D20;
+  animation:float 4s ease-in-out infinite;
+}
+.login-planet::after{
+  content:'';position:absolute;top:50%;left:-20%;width:140%;height:18px;
+  background:rgba(255,255,255,0.08);border-radius:50%;transform:translateY(-50%) rotateX(70deg);
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.login-title{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;
+  background:linear-gradient(90deg,#FFD93D,#FF6B35);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:2rem;line-height:1.5}
+.tg-user-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:14px 16px;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;
+}
+.tg-avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sky),var(--deep));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Unbounded',sans-serif;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.tg-name{font-weight:700;font-size:15px;text-align:left}
+.tg-handle{font-size:12px;color:var(--muted);text-align:left}
+.btn-enter{
+  width:100%;padding:14px;border-radius:14px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#FFD93D,#FF6B35);
+  font-family:'Unbounded',sans-serif;font-size:14px;font-weight:600;color:#1A0A00;
+  letter-spacing:0.5px;transition:transform .15s,box-shadow .15s;
+  box-shadow:0 4px 20px #FF6B3540;
+}
+.btn-enter:active{transform:scale(.97)}
+
+.admin-toggle{margin-top:1rem;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline}
+.admin-form{margin-top:.75rem;display:none;flex-direction:column;gap:8px}
+.admin-form.show{display:flex}
+.pin-input{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;color:var(--text);font-size:14px;outline:none;text-align:center;letter-spacing:4px;
+  transition:border-color .2s;
+}
+.pin-input:focus{border-color:var(--sky)}
+.btn-admin{
+  padding:10px;border-radius:10px;border:1px solid var(--sky);background:transparent;
+  color:var(--sky);font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;
+}
+.btn-admin:hover{background:rgba(0,180,216,0.1)}
+
+/* ── MAIN APP ── */
+#appScreen{}
+
+.app-header{
+  padding:1.25rem 1.25rem .75rem;
+  background:linear-gradient(180deg,#0D1F38 0%,transparent 100%);
+  position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.header-greeting{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:600}
+.header-greeting span{
+  background:linear-gradient(90deg,#FFD93D,#FF6B35);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.logout-btn{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--border);
+  background:var(--card);color:var(--muted);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:10px 8px;text-align:center;
+}
+.stat-num{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:700}
+.stat-num.s-total{color:var(--sky)}
+.stat-num.s-done{color:var(--mint)}
+.stat-num.s-pct{color:var(--sun)}
+.stat-label{font-size:10px;color:var(--muted);margin-top:2px}
+
+.progress-track{height:6px;background:var(--border);border-radius:100px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--mint));border-radius:100px;transition:width .5s ease}
+
+/* ── ADD AREA ── */
+.add-area{padding:0 1.25rem 1rem}
+.add-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;
+}
+.add-row{display:flex;gap:8px}
+.add-input{
+  flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;color:var(--text);font-size:14px;font-family:'Nunito',sans-serif;outline:none;
+  transition:border-color .2s;
+}
+.add-input:focus{border-color:var(--sky)}
+.add-input::placeholder{color:var(--muted)}
+.add-btn{
+  width:42px;height:42px;border-radius:10px;border:none;cursor:pointer;flex-shrink:0;
+  background:linear-gradient(135deg,var(--sky),var(--deep));
+  color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;box-shadow:0 4px 12px #00B4D840;
+}
+.add-btn:active{transform:scale(.93)}
+.emoji-row{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+.emoji-row::-webkit-scrollbar{display:none}
+.emoji-chip{
+  flex-shrink:0;padding:5px 10px;border-radius:100px;
+  background:var(--card2);border:1.5px solid transparent;
+  font-size:16px;cursor:pointer;transition:all .15s;
+}
+.emoji-chip.sel{border-color:var(--sun);background:#2A1F05}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:6px;padding:0 1.25rem .75rem;overflow-x:auto}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{
+  flex-shrink:0;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;
+  border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;
+  transition:all .2s;font-family:'Nunito',sans-serif;
+}
+.filter-btn.active{background:var(--sky);border-color:var(--sky);color:#fff}
+
+/* ── TASKS ── */
+.tasks-area{padding:0 1.25rem;display:flex;flex-direction:column;gap:10px}
+
+.task-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:12px 14px;display:flex;align-items:center;gap:10px;
+  transition:all .25s;animation:popIn .3s cubic-bezier(.34,1.56,.64,1);
+  cursor:pointer;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.9) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.task-card.done-card{background:#0A1F18;border-color:#0D3025}
+.task-card.done-card .task-text{text-decoration:line-through;color:var(--muted)}
+
+.check-circle{
+  width:26px;height:26px;border-radius:50%;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all .2s;font-size:13px;
+}
+.task-card.done-card .check-circle{
+  background:var(--mint);border-color:var(--mint);color:#fff;
+}
+.task-emoji{font-size:22px;flex-shrink:0}
+.task-body{flex:1;min-width:0}
+.task-text{font-size:14px;line-height:1.35;transition:color .2s}
+.task-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.del-btn{
+  width:28px;height:28px;border-radius:50%;border:none;background:transparent;
+  color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:color .2s,background .2s;flex-shrink:0;
+}
+.del-btn:hover{color:#FF6B6B;background:rgba(255,107,107,0.1)}
+
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-ico{font-size:48px;display:block;margin-bottom:8px}
+
+/* ── ADMIN SCREEN ── */
+#adminScreen{}
+.admin-header{
+  padding:1.25rem;background:linear-gradient(180deg,#0D1F38,transparent);
+  position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);
+  display:flex;align-items:center;gap:12px;
+}
+.admin-title{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:600;
+  background:linear-gradient(90deg,#FFD93D,#FF6B35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.back-btn{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--border);
+  background:var(--card);color:var(--muted);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.admin-body{padding:0 1.25rem;display:flex;flex-direction:column;gap:12px}
+.admin-user-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;
+}
+.auc-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.auc-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sky),var(--deep));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:#fff;
+}
+.auc-name{font-weight:700;font-size:14px}
+.auc-stats{font-size:11px;color:var(--muted)}
+.auc-tasks{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.auc-task{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:var(--card2);border-radius:10px;font-size:13px;
+}
+.auc-task.d{color:var(--muted);text-decoration:line-through}
+.auc-task-emoji{font-size:16px}
+.admin-empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px}
+
+/* ── WELCOME ── */
+#welcomeScreen{align-items:center;justify-content:center;padding:2rem}
+.welcome-wrap{width:100%;max-width:340px;text-align:center}
+.welcome-sun{font-size:64px;margin-bottom:1rem;animation:float 4s ease-in-out infinite;display:block}
+.welcome-title{
+  font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px;
+  background:linear-gradient(90deg,#FFD93D,#FF6B35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.welcome-sub{font-size:14px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6}
+.welcome-inputs{display:flex;flex-direction:column;gap:8px}
+.welcome-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;
+}
+.w-emoji{font-size:20px;flex-shrink:0}
+.welcome-task-inp{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-size:14px;font-family:'Nunito',sans-serif;
+}
+.welcome-task-inp::placeholder{color:var(--muted)}
+.skip-btn{margin-top:.85rem;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline}
+
+.section-head{
+  font-family:'Unbounded',sans-serif;font-size:11px;font-weight:600;
+  color:var(--muted);letter-spacing:1px;text-transform:uppercase;
+  padding:0 2px;margin-top:.5rem;
+}
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+
+<!-- LOGIN SCREEN -->
+<div class="screen active" id="loginScreen">
+  <div class="login-box">
+    <div class="login-planet"></div>
+    <div class="login-title">Летний список ☀️</div>
+    <p class="login-sub">Планируй лето, отмечай победы.<br>Твои дела всегда с тобой.</p>
+    <div class="tg-user-card" id="tgUserCard">
+      <div class="tg-avatar" id="tgAvatar">?</div>
+      <div>
+        <div class="tg-name" id="tgName">Загрузка...</div>
+        <div class="tg-handle" id="tgHandle">@...</div>
+      </div>
+    </div>
+    <button class="btn-enter" onclick="enterApp()">Войти в приложение →</button>
+    <div class="admin-toggle" onclick="toggleAdmin()">🔐 Войти как администратор</div>
+    <div class="admin-form" id="adminForm">
+      <input class="pin-input" type="password" id="pinInput" placeholder="••••••" maxlength="20">
+      <button class="btn-admin" onclick="enterAdmin()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div class="screen" id="appScreen">
+  <div class="app-header">
+    <div class="header-top">
+      <div class="header-greeting">Привет, <span id="appName">друг</span> 👋</div>
+      <button class="logout-btn" onclick="logout()" title="Выйти">↩</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num s-total" id="statTotal">0</div><div class="stat-label">всего</div></div>
+      <div class="stat-card"><div class="stat-num s-done" id="statDone">0</div><div class="stat-label">готово</div></div>
+      <div class="stat-card"><div class="stat-num s-pct" id="statPct">0%</div><div class="stat-label">прогресс</div></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="add-area">
+    <div class="add-card">
+      <div class="add-row">
+        <input class="add-input" id="taskInput" placeholder="Что хочу сделать этим летом..." maxlength="80">
+        <button class="add-btn" onclick="addTask()">+</button>
+      </div>
+      <div class="emoji-row" id="emojiRow">
+        <span class="emoji-chip sel" onclick="pickEmoji(this,'🏖️')">🏖️</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🏊')">🏊</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🍦')">🍦</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🌴')">🌴</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🎉')">🎉</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🚴')">🚴</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'📚')">📚</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🎸')">🎸</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'✈️')">✈️</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🌅')">🌅</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🎯')">🎯</span>
+        <span class="emoji-chip" onclick="pickEmoji(this,'🍉')">🍉</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Все</button>
+    <button class="filter-btn" onclick="setFilter('todo',this)">Впереди</button>
+    <button class="filter-btn" onclick="setFilter('done',this)">Готово ✓</button>
+  </div>
+
+  <div class="tasks-area" id="taskList"></div>
+</div>
+
+<!-- WELCOME SCREEN -->
+<div class="screen" id="welcomeScreen">
+  <div class="welcome-wrap">
+    <div class="welcome-sun">☀️</div>
+    <div class="welcome-title">Привет, <span id="welcomeName">друг</span>!</div>
+    <p class="welcome-sub">Хочешь сразу добавить<br>несколько летних дел?</p>
+    <div class="welcome-inputs">
+      <div class="welcome-row">
+        <span class="w-emoji">🏖️</span>
+        <input class="welcome-task-inp" data-emoji="🏖️" placeholder="Например: сходить на пляж" maxlength="60">
+      </div>
+      <div class="welcome-row">
+        <span class="w-emoji">✈️</span>
+        <input class="welcome-task-inp" data-emoji="✈️" placeholder="Например: съездить в путешествие" maxlength="60">
+      </div>
+      <div class="welcome-row">
+        <span class="w-emoji">🎉</span>
+        <input class="welcome-task-inp" data-emoji="🎉" placeholder="Например: устроить вечеринку" maxlength="60">
+      </div>
+    </div>
+    <button class="btn-enter" style="margin-top:1.25rem" onclick="addWelcomeTasks()">Добавить и начать →</button>
+    <div class="skip-btn" onclick="skipWelcome()">Пропустить, начну сам</div>
+  </div>
+</div>
+
+<!-- ADMIN SCREEN -->
+<div class="screen" id="adminScreen">
+  <div class="admin-header">
+    <button class="back-btn" onclick="logout()">←</button>
+    <div class="admin-title">Админ панель</div>
+  </div>
+  <div class="admin-body" id="adminBody"></div>
+</div>
+
+<script>
+// ── STARS ──
+const starsEl = document.getElementById('stars');
+for(let i=0;i<60;i++){
+  const s=document.createElement('div');
+  s.className='star';
+  const sz=Math.random()*2+1;
+  s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${2+Math.random()*3}s;animation-delay:${Math.random()*3}s`;
+  starsEl.appendChild(s);
+}
+
+// ── CONSTANTS ──
+const ADMIN_PIN = "admin2025";
+const ADMIN_KEY = "summer_admin_users";
+
+// ── STATE ──
+let currentUser = null;
+let tasks = [];
+let filter = 'all';
+let selectedEmoji = '🏖️';
+
+// ── TELEGRAM ──
+const tgApp = window.Telegram?.WebApp;
+if(tgApp){ tgApp.ready(); tgApp.expand(); }
+
+const tgUser = tgApp?.initDataUnsafe?.user;
+const userId = tgUser?.id ? String(tgUser.id) : ('guest_' + Math.random().toString(36).slice(2,8));
+const firstName = tgUser?.first_name || 'Друг';
+const username = tgUser?.username ? '@'+tgUser.username : '';
+
+document.getElementById('tgAvatar').textContent = firstName[0].toUpperCase();
+document.getElementById('tgName').textContent = firstName + (tgUser?.last_name ? ' '+tgUser.last_name : '');
+document.getElementById('tgHandle').textContent = username || 'Telegram пользователь';
+
+// ── STORAGE ──
+function userKey(uid){ return 'summer_tasks_' + uid; }
+
+function loadTasks(uid){
+  try{ return JSON.parse(localStorage.getItem(userKey(uid)) || '[]'); }
+  catch(e){ return []; }
+}
+
+function saveTasks(uid, t){
+  localStorage.setItem(userKey(uid), JSON.stringify(t));
+  // save to admin registry
+  let reg = {};
+  try{ reg = JSON.parse(localStorage.getItem(ADMIN_KEY) || '{}'); }catch(e){}
+  reg[uid] = { name: firstName + (tgUser?.last_name?' '+tgUser.last_name:''), username, tasks: t };
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(reg));
+}
+
+// ── AUTH ──
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function enterApp(){
+  currentUser = { uid: userId, name: firstName };
+  tasks = loadTasks(userId);
+  document.getElementById('appName').textContent = firstName;
+  if(tasks.length === 0){
+    // показываем экран приветствия только новым пользователям
+    showScreen('welcomeScreen');
+    document.getElementById('welcomeName').textContent = firstName;
+  } else {
+    showScreen('appScreen');
+    render();
+  }
+}
+
+function skipWelcome(){
+  showScreen('appScreen');
+  render();
+}
+
+function addWelcomeTasks(){
+  const inputs = document.querySelectorAll('.welcome-task-inp');
+  inputs.forEach(inp => {
+    const text = inp.value.trim();
+    const emoji = inp.dataset.emoji || '🌟';
+    if(text){
+      tasks.unshift({id: Date.now() + Math.random(), text, emoji, done: false, date: today()});
+    }
+  });
+  saveTasks(currentUser.uid, tasks);
+  showScreen('appScreen');
+  render();
+}
+
+function toggleAdmin(){
+  const f=document.getElementById('adminForm');
+  f.classList.toggle('show');
+}
+
+function enterAdmin(){
+  const pin=document.getElementById('pinInput').value;
+  if(pin===ADMIN_PIN){
+    currentUser={uid:'admin',name:'Admin'};
+    showScreen('adminScreen');
+    renderAdmin();
+  } else {
+    document.getElementById('pinInput').style.borderColor='#FF6B6B';
+    setTimeout(()=>document.getElementById('pinInput').style.borderColor='',1000);
+  }
+}
+
+function logout(){
+  currentUser=null;
+  document.getElementById('pinInput').value='';
+  document.getElementById('adminForm').classList.remove('show');
+  showScreen('loginScreen');
+}
+
+// ── HELPERS ──
+function today(){ return new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── APP LOGIC ──
+function pickEmoji(el,e){
+  document.querySelectorAll('.emoji-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedEmoji=e;
+}
+
+function addTask(){
+  const inp=document.getElementById('taskInput');
+  const text=inp.value.trim();
+  if(!text) return;
+  tasks.unshift({id:Date.now(),text,emoji:selectedEmoji,done:false,date:today()});
+  inp.value='';
+  saveTasks(currentUser.uid, tasks);
+  render();
+  if(tgApp?.HapticFeedback) tgApp.HapticFeedback.impactOccurred('light');
+}
+
+function toggleTask(id){
+  const t=tasks.find(t=>t.id===id);
+  if(t){ t.done=!t.done; saveTasks(currentUser.uid, tasks); render(); }
+  if(tgApp?.HapticFeedback) tgApp.HapticFeedback.impactOccurred('medium');
+}
+
+function deleteTask(id){
+  tasks=tasks.filter(t=>t.id!==id);
+  saveTasks(currentUser.uid, tasks);
+  render();
+}
+
+function setFilter(f,el){
+  filter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function render(){
+  const total=tasks.length;
+  const done=tasks.filter(t=>t.done).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('statTotal').textContent=total;
+  document.getElementById('statDone').textContent=done;
+  document.getElementById('statPct').textContent=pct+'%';
+  document.getElementById('progressFill').style.width=pct+'%';
+
+  let list=tasks;
+  if(filter==='todo') list=tasks.filter(t=>!t.done);
+  if(filter==='done') list=tasks.filter(t=>t.done);
+
+  const el=document.getElementById('taskList');
+  if(list.length===0){
+    el.innerHTML=`<div class="empty"><span class="empty-ico">${filter==='done'?'🌻':'🌊'}</span><p style="font-size:14px">${filter==='done'?'Пока ничего не выполнено':'Добавь первое летнее желание!'}</p></div>`;
+    return;
+  }
+  el.innerHTML=list.map(t=>`
+    <div class="task-card ${t.done?'done-card':''}" onclick="toggleTask(${t.id})">
+      <div class="check-circle">${t.done?'✓':''}</div>
+      <div class="task-emoji">${t.emoji}</div>
+      <div class="task-body">
+        <div class="task-text">${esc(t.text)}</div>
+        <div class="task-meta">${t.date||''}</div>
+      </div>
+      <button class="del-btn" onclick="event.stopPropagation();deleteTask(${t.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── ADMIN ──
+function renderAdmin(){
+  let reg={};
+  try{ reg=JSON.parse(localStorage.getItem(ADMIN_KEY)||'{}'); }catch(e){}
+  const keys=Object.keys(reg);
+  const body=document.getElementById('adminBody');
+  if(keys.length===0){
+    body.innerHTML='<div class="admin-empty">Пока никто не пользовался приложением</div>';
+    return;
+  }
+  body.innerHTML='<div class="section-head">Пользователи</div>'+keys.map(uid=>{
+    const u=reg[uid];
+    const total=u.tasks.length;
+    const done=u.tasks.filter(t=>t.done).length;
+    const pct=total?Math.round(done/total*100):0;
+    const taskRows=u.tasks.slice(0,5).map(t=>`
+      <div class="auc-task ${t.done?'d':''}">
+        <span class="auc-task-emoji">${t.emoji}</span>
+        <span>${esc(t.text)}</span>
+        ${t.done?'<span style="margin-left:auto;color:var(--mint);font-size:11px">✓</span>':''}
+      </div>
+    `).join('');
+    const more=total>5?`<div style="font-size:11px;color:var(--muted);padding:4px 10px">+${total-5} ещё...</div>`:'';
+    return `
+      <div class="admin-user-card">
+        <div class="auc-top">
+          <div class="auc-avatar">${(u.name||'?')[0].toUpperCase()}</div>
+          <div>
+            <div class="auc-name">${esc(u.name||'Без имени')}</div>
+            <div class="auc-stats">${u.username||''} · ${done}/${total} · ${pct}%</div>
+          </div>
+        </div>
+        <div class="auc-tasks">${taskRows}${more}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── KEYBOARD ──
+document.getElementById('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTask()});
+</script>
+</body>
+</html>
